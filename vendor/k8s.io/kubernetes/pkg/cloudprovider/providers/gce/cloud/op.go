@@ -25,8 +25,13 @@ import (
 	alpha "google.golang.org/api/compute/v0.alpha"
 	beta "google.golang.org/api/compute/v0.beta"
 	ga "google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 
 	"k8s.io/kubernetes/pkg/cloudprovider/providers/gce/cloud/meta"
+)
+
+const (
+	operationStatusDone = "DONE"
 )
 
 // operation is a GCE operation that can be watied on.
@@ -43,6 +48,7 @@ type gaOperation struct {
 	s         *Service
 	projectID string
 	key       *meta.Key
+	err       error
 }
 
 func (o *gaOperation) String() string {
@@ -71,7 +77,16 @@ func (o *gaOperation) isDone(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return op != nil && op.Status == "DONE", nil
+	if op == nil || op.Status != operationStatusDone {
+		return false, nil
+	}
+
+	if op.Error != nil && len(op.Error.Errors) > 0 && op.Error.Errors[0] != nil {
+		e := op.Error.Errors[0]
+		o.err = &googleapi.Error{Code: int(op.HttpErrorStatusCode), Message: fmt.Sprintf("%v - %v", e.Code, e.Message)}
+		return true, o.err
+	}
+	return true, nil
 }
 
 func (o *gaOperation) rateLimitKey() *RateLimitKey {
@@ -87,6 +102,7 @@ type alphaOperation struct {
 	s         *Service
 	projectID string
 	key       *meta.Key
+	err       error
 }
 
 func (o *alphaOperation) String() string {
@@ -115,7 +131,16 @@ func (o *alphaOperation) isDone(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return op != nil && op.Status == "DONE", nil
+	if op == nil || op.Status != operationStatusDone {
+		return false, nil
+	}
+
+	if op.Error != nil && len(op.Error.Errors) > 0 && op.Error.Errors[0] != nil {
+		e := op.Error.Errors[0]
+		o.err = &googleapi.Error{Code: int(op.HttpErrorStatusCode), Message: fmt.Sprintf("%v - %v", e.Code, e.Message)}
+		return true, o.err
+	}
+	return true, nil
 }
 
 func (o *alphaOperation) rateLimitKey() *RateLimitKey {
@@ -131,6 +156,7 @@ type betaOperation struct {
 	s         *Service
 	projectID string
 	key       *meta.Key
+	err       error
 }
 
 func (o *betaOperation) String() string {
@@ -159,7 +185,16 @@ func (o *betaOperation) isDone(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return op != nil && op.Status == "DONE", nil
+	if op == nil || op.Status != operationStatusDone {
+		return false, nil
+	}
+
+	if op.Error != nil && len(op.Error.Errors) > 0 && op.Error.Errors[0] != nil {
+		e := op.Error.Errors[0]
+		o.err = &googleapi.Error{Code: int(op.HttpErrorStatusCode), Message: fmt.Sprintf("%v - %v", e.Code, e.Message)}
+		return true, o.err
+	}
+	return true, nil
 }
 
 func (o *betaOperation) rateLimitKey() *RateLimitKey {
