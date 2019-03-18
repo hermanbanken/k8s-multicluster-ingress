@@ -65,6 +65,9 @@ func (o *gaOperation) isDone(ctx context.Context) (bool, error) {
 	case meta.Global:
 		op, err = o.s.GA.GlobalOperations.Get(o.projectID, o.key.Name).Context(ctx).Do()
 		glog.V(5).Infof("GA.GlobalOperations.Get(%v, %v) = %+v, %v; ctx = %v", o.projectID, o.key.Name, op, err, ctx)
+		if op.Error != nil {
+			glog.V(5).Infof("Herman Error: %+v, Errors: %+v %s", op.Error, op.Error.Errors[0], op.Error.Errors[0])
+		}
 	default:
 		return false, fmt.Errorf("invalid key type: %#v", o.key)
 	}
